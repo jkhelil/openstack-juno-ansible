@@ -1,0 +1,10 @@
+---
+- include: playbooks/base/main.yaml
+- include: playbooks/mysql/main.yaml
+- include: playbooks/rabbitmq/main.yaml
+- include: playbooks/keystone/main.yaml
+- include: playbooks/nova/main.yaml
+- include: playbooks/neutron/main.yaml
+- include: playbooks/glance/main.yaml
+- include: playbooks/cinder/main.yaml
+- include: playbooks/dashboard/main.yaml

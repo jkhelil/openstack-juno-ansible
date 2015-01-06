@@ -1,0 +1,79 @@
+---
+- name: Install sensu server
+  hosts: sensu
+  sudo: True
+  gather_facts: True
+  tasks:
+
+    - name: Ensure gpg repo key is installed
+      apt_key: url=http://repos.sensuapp.org/apt/pubkey.gpg state=present
+
+    - name: Ensure needed repositories are present
+      apt_repository: repo='deb  http://repos.sensuapp.org/apt sensu main' state=present
+
+    - name: Ensure sensu server is installed
+      apt:
+        pkg: sensu
+        state: latest
+        update_cache: yes
+        cache_valid_time: 60
+
+    - name: Create sensu ssl directory
+      file: path=/etc/sensu/ssl owner=sensu group=sensu mode=0640 state=directory
+
+    - name: Copy ssl files
+      copy: src=files/{{ item }} dest=/etc/sensu/ssl owner=sensu group=sensu mode=0640
+      with_items:
+        - client_cert.pem
+        - client_key.pem
+
+    - name: Configure sensu server
+      template:  
+        src: templates/etc/sensu/conf.d/{{ item }}
+        dest: /etc/sensu/conf.d/{{ item }}
+        owner: sensu
+        group: sensu
+        mode: 0644
+      with_items:
+        - rabbitmq.json
+        - redis.json
+        - api.json
+        - check_system.json
+        - check_mysql.json
+        - handler_graphite.json
+
+
+    - name: ensure services are started and enabled
+      service: 
+        name: "{{ item }}"
+        state: restarted 
+        enabled: yes
+      with_items: 
+        - sensu-server
+        - sensu-client
+        - sensu-api
+
+    - name: Ensure uchiwa is installed
+      apt:
+        pkg: uchiwa
+        state: latest
+        update_cache: yes
+        cache_valid_time: 60
+
+    - name: Configure uchiwa
+      template:
+        src: templates/etc/sensu/{{ item }}
+        dest: /etc/sensu/{{ item }}
+        owner: sensu
+        group: sensu
+        mode: 0644
+      with_items:
+        - uchiwa.json
+
+    - name: ensure services are started and enabled
+      service: 
+        name: "{{ item }}"
+        state: restarted 
+        enabled: yes
+      with_items: 
+        - uchiwa

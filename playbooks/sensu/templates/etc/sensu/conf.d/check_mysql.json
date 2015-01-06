@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "mysql_alive_check": {
+      "handlers": ["default"],
+      "command": "/etc/sensu/plugins/mysql-alive.rb -h {{ mysql_host }} -d keystone -u keystone -p T6Pol5Ys3gJd9mO-OpwZ",
+      "interval": 60,
+      "subscribers": [ "mysql" ]
+    },
+    "mysql_connection_check": {
+      "handlers": ["default"],
+      "command": "/etc/sensu/plugins/mysql-connections.rb -h {{ mysql_host }} -d keystone -u keystone -p T6Pol5Ys3gJd9mO-OpwZ",
+      "interval": 60,
+      "subscribers": [ "mysql" ]
+    }
+  }
+}

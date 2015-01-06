@@ -1,0 +1,13 @@
+{
+  "handlers": {
+    "graphite": {
+      "type": "amqp",
+      "exchange": {
+        "type": "topic",
+        "name": "metrics",
+        "durable": "true"
+      },
+      "mutator": "only_check_output"
+    }
+  }
+}

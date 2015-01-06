@@ -1,0 +1,61 @@
+---
+- name: Install graphite
+  hosts: graphite
+  sudo: true
+  gather_facts: true
+  vars:
+    packages:
+        - graphite-web 
+        - graphite-carbon
+    services:
+  tasks:
+
+  - name: Ensure graphite is installed
+    apt:
+      pkg: {{item}}
+      status: latest
+      update_cache: yes
+      update_intervall: 60
+    with_items: packages
+
+  - name: Ensure graphite is configured
+    template:
+      src: templates/etc/graphite/{{ item }}
+      dest: /etc/graphite/{{ item }}
+      owner: graphite
+      group: graphite
+      mode: 0644
+    with_items:
+      - local_settings.py
+
+
+  - name: ensure database is synced
+    command: /usr/bin/graphite-manage syncdb
+
+
+  - name: Ensure carbon is configured
+    template:
+      src: templates/etc/carbon/{{ item }}
+      dest: /etc/carbon/{{ item }}
+      owner: graphite
+      group: graphite
+      mode: 0644
+    with_items:
+      - carbon-cache.conf
+      - storage-schemas.conf
+
+
+  - name: Ensure apache is installed
+    apt:
+    pkg: {{ item }}
+    state: latest
+    update_cache: yes
+    cache_valid_time: 60
+    with_items:
+      - apache2
+      - libapache2-mod-wsgi
+
+  - name: Ensure graphite vhost is configured
+    template:
+      src: templates/etc/apache2/sites-enabled
+      dest: 

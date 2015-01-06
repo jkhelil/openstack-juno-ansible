@@ -1,0 +1,9 @@
+{
+  "rabbitmq": {
+    "host": "{{ rabbit_host }}",
+    "port": 5672,
+    "vhost": "/sensu",
+    "user": "sensu",
+    "password": "{{ sensu_rabbit_password }}"
+  }
+}

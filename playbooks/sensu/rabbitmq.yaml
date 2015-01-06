@@ -1,0 +1,46 @@
+---
+- name:  Configure rabbitmq server
+  hosts: rabbitmq
+  sudo:  True
+  gather_facts: True
+  tasks:
+
+  - name: Ensure sensu vhost is present
+    rabbitmq_vhost:
+        name: /sensu
+        state: present
+
+  - name: Ensure sensu user is present
+    rabbitmq_user:
+      user: sensu
+      password: "{{ sensu_rabbit_password }}" 
+      vhost: /sensu
+      configure_priv: .*
+      read_priv: .*
+      write_priv: .*
+      state: present
+      force: yes
+
+  - name: Create rabbitmq ssl dir
+    file: path=/etc/rabbitmq/ssl/ owner=rabbitmq group=rabbitmq mode=0750 state=directory
+
+  - name: Copy SSl files
+    copy: src=files/{{ item }} dest=/etc/rabbitmq/ssl/ owner=rabbitmq group=rabbitmq mode=0640
+    with_items:
+      - cacert.pem
+      - server_key.pem
+      - server_cert.pem
+
+  - name: Configure Rabbitmq
+    template:  
+      src: templates/etc/rabbitmq/rabbitmq.conf 
+      dest: /etc/rabbitmq/rabbitmq.config
+      owner: rabbitmq
+      group: rabbitmq
+      mode: 0644
+
+  - name: ensure rabbitmq server is started and enabled
+    service: 
+      name: rabbitmq-server 
+      state: restarted 
+      enabled: yes

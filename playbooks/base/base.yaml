@@ -1,0 +1,95 @@
+---
+- name: setup steps that are not specific to a particular role or project
+  hosts: all
+  sudo: True
+  gather_facts: True
+  tasks:
+
+    - name: update apt cache
+      apt: 
+        update_cache: yes
+
+    - name: ensure required base packages are present
+      apt: 
+        pkg: "{{ item }}" 
+        state: latest 
+        update_cache: yes 
+        cache_valid_time: 600
+      with_items:
+        - chrony
+        - python-mysqldb
+        - python-software-properties
+        - language-pack-en
+
+    - name: upgrade software packages to latest version
+      apt: 
+        update_cache: yes
+        upgrade: dist 
+
+    - name: ensure needed repositories are present
+      command: apt-add-repository -y "{{ item }}"
+      with_items: openstack_repositories
+    
+    - name: autoremove unneeded packages
+      command: apt-get -y autoremove
+
+    - name: register running kernel version
+      command: uname -r
+      register: running_kernel
+
+    - name: register installed kernel version
+      shell: dpkg -l | grep "linux-image-[0-9]" | sort | tail -1 | perl -ane 'print substr($F[1], 12), "\n"'
+      register: installed_kernel
+
+    - name: reboot if kernel version has changed
+      include: reboot.yaml
+      when: installed_kernel.stdout != running_kernel.stdout
+
+    - name: ensure chrony server is stopped
+      service: 
+        name: chrony
+        state: stopped
+
+    - name: install chrony.conf 
+      template: 
+        src: templates/etc/chrony/chrony.conf 
+        dest: /etc/chrony/chrony.conf 
+        owner: root 
+        group: root 
+        mode: 0644
+
+    - name: set clocks to public ntp server
+      command: ntpdate {{ external_ntp_host }}
+      ignore_errors: yes
+
+    # register: ntpdate_result
+    # until: ntpdate_result|success
+    # retries: 5
+    # delay: 5
+
+    #- name: make sure chrony server is started and enabled
+    #  service: 
+    #    name: chrony
+    #    state: restarted 
+    #    enabled: yes
+    #  when: "'ntpserver' in group_names"
+
+    #- name: set clocks to local chrony server
+    #  command: ntpdate {{ ntp_host }}
+    #  register: ntpdate_result
+    #  when: "'ntpserver' not in group_names"
+    #  until: ntpdate_result|success
+    #  retries: 5
+    #  delay: 5
+
+    - name: save system clock to hardware
+      command: hwclock --systohc
+
+    - name: make sure chrony is started and enabled everywhere
+      service: 
+        name: chrony
+        state: restarted 
+        enabled: yes
+
+- include: virtualbox.yaml
+  when: ansible_virtualization_type|defined and ansible_virtualization_type == "virtualbox"

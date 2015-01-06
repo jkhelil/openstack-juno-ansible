@@ -1,0 +1,8 @@
+{
+  "api": {
+    "host": "{{ sensu_host }}",
+    "port": 4567,
+    "user": "admin",
+    "password": "admin"
+  }
+}

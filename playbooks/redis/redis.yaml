@@ -1,0 +1,34 @@
+---
+- name: Configure redis server
+  hosts: redis
+  sudo: True
+  gather_facts: True
+  tasks:
+
+    - name: Ensure redis server is installed
+      apt:
+        package: redis-server
+        state: latest
+        update_cache: yes
+        cache_valid_time: 60
+
+    - name: Ensure redis server is stopped
+      service:
+        name: redis-server
+        state: stopped
+        enabled: yes
+
+    - name: Ensure redis server is configured
+      template:
+        src: templates/etc/redis/redis.conf
+        dest: /etc/redis/redis.conf
+        owner: redis
+        group: redis
+        mode: 0644
+
+    - name: Ensure redis server is started
+      service:
+        name: redis-server
+        state: started
+        enabled: yes
+

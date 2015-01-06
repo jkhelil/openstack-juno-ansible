@@ -1,0 +1,6 @@
+{
+  "redis": {
+    "host": "{{ redis_host }}",
+    "port": 6379
+  }
+}

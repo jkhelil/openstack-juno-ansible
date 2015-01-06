@@ -1,0 +1,2 @@
+---
+nova_compute_package: nova-compute-qemu

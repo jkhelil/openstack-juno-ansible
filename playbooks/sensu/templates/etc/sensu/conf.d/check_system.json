@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "cpu_check": {
+      "handlers": ["default"],
+      "command": "/etc/sensu/plugins/check-cpu.rb",
+      "interval": 60,
+      "subscribers": [ "system" ]
+    },
+    "disk_check": {
+      "handlers": ["default"],
+      "command": "/etc/sensu/plugins/check-disk.rb",
+      "interval": 60,
+      "subscribers": [ "system" ]
+    }
+  }
+}

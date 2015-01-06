@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "vmstat_metrics": {
+      "type": "metric",
+      "handlers": ["graphite"], 
+      "command": "/etc/sensu/plugins/vmstat-metrics.rb --scheme stats.:::name:::",
+      "interval": 60,
+          "subscribers": ["system_metrics"]
+    }
+  }  
+}

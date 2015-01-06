@@ -1,0 +1,20 @@
+---
+- name: Install or verify graphite database
+  hosts: mysql
+  sudo: True
+  gather_facts: False
+  tasks:
+
+    - name: ensure graphite database is present
+      mysql_db: 
+        name: graphite
+
+    - name: ensure graphite database user is present
+      mysql_user: 
+        name: graphite 
+        host: "{{ item }}" 
+        password: "{{ graphite_mysql_password }}" 
+        priv: graphite.*:ALL
+      with_items:
+        - "%"
+        - localhost

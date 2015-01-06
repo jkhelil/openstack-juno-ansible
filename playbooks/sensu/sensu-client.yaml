@@ -1,0 +1,93 @@
+---
+- name: Install sensu client
+  hosts: controller:compute:network:image:volume
+  sudo: True
+  gather_facts: True
+  tasks:
+
+    - name: Ensure gpg repo key is installed
+      apt_key: url=http://repos.sensuapp.org/apt/pubkey.gpg state=present
+
+    - name: Ensure needed repositories are present
+      apt_repository: repo='deb  http://repos.sensuapp.org/apt sensu main' state=present
+
+    - name: Ensure sensu server is installed
+      apt:
+        pkg: sensu
+        state: latest
+        update_cache: yes
+        cache_valid_time: 60
+
+    - name: Create sensu ssl directory
+      file: path=/etc/sensu/ssl owner=sensu group=sensu mode=0640 state=directory
+
+    - name: Copy ssl files
+      copy: src=files/{{ item }} dest=/etc/sensu/ssl owner=sensu group=sensu mode=0640
+      with_items:
+        - client_cert.pem
+        - client_key.pem
+
+    - name: Configure sensu client
+      template:  
+        src: templates/etc/sensu/conf.d/{{ item }}
+        dest: /etc/sensu/conf.d/{{ item }}
+        owner: sensu
+        group: sensu
+        mode: 0644
+      with_items:
+        - rabbitmq.json
+
+    - name: Latest version of Ruby is installed
+      apt: pkg={{ item }} state=latest
+      with_items:
+        - ruby2.0
+        - ruby2.0-dev
+
+    - name: Symlink exists for Ruby 2.0
+      file: src=/usr/bin/ruby2.0 dest=/usr/local/bin/ruby state=link
+
+    - name: Symlink exists for Ruby Gems 2.0
+      file: src=/usr/bin/gem2.0 dest=/usr/local/bin/gem state=link
+
+    - name: Install sensu plugin
+      gem:
+        name: sensu-plugin
+        state: latest
+        repository: https://rubygems.org
+
+    #- name: Create sensu plugin directory for mysql
+    #  file: path=/etc/sensu/plugins/mysql state=directory
+
+    - name: Install mysql sensu checks
+      get_url: dest=/etc/sensu/plugins url=https://raw.github.com/sensu/sensu-community-plugins/master/plugins/{{ item }}
+      with_items:
+        - mysql/mysql-alive.rb
+        - mysql/mysql-connections.rb
+        - mysql/mysql-disk.rb 
+        - system/check-cpu.rb
+        - system/check-disk.rb
+        - system/cpu-metrics.rb
+        - system/memory-metrics.rb
+        - system/vmstat-metrics.rb
+
+    - name: Change file permission
+      command: chmod 755 /etc/sensu/plugins/*.rb
+      sudo_user: sensu
+
+    - name: Configure sensu client
+      template:
+        src: templates/etc/sensu/conf.d/{{ item }}
+        dest: /etc/sensu/conf.d/{{ item }}
+        owner: sensu
+        group: sensu
+        mode: 0644
+      with_items:
+        - subscribe_all.json
+
+    - name: Ensure services are started and enabled
+      service: 
+        name: "{{ item }}"
+        state: restarted 
+        enabled: yes
+      with_items: 
+        - sensu-client
